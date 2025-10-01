@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectButton = categorySelectContainer.querySelector('.select-button');
     const selectValue = categorySelectContainer.querySelector('.select-value');
     const selectDropdown = categorySelectContainer.querySelector('.select-dropdown');
-    const API_BASE_URL = 'http://localhost:3000';
+    const API_BASE_URL = 'https://flower-shop-back-end.onrender.com';
 
     const confirmOverlay = document.getElementById('confirm-overlay');
     const confirmModal = document.getElementById('confirm-modal');
