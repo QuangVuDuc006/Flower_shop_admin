@@ -11,34 +11,19 @@
 </head>
 <body>
     <div class="page-container">
-        <header class="admin-header">
-            <h1>Bảng điều khiển FlowerShop</h1>
-        </header>
-
+        <header class="admin-header"><h1>Bảng điều khiển FlowerShop</h1></header>
         <main class="admin-main">
             <div class="card form-container">
                 <h2>Thêm sản phẩm mới</h2>
                 <form id="add-product-form" enctype="multipart/form-data">
                     <div class="form-grid">
+                        <div class="form-group"><label for="product-name">Tên sản phẩm</label><input type="text" id="product-name" required></div>
+                        <div class="form-group"><label for="product-price">Giá tiền (chỉ nhập số)</label><input type="number" id="product-price" required></div>
+                        <div class="form-group"><label for="product-image">Hình ảnh</label><input type="file" id="product-image" required></div>
                         <div class="form-group">
-                            <label for="product-name">Tên sản phẩm</label>
-                            <input type="text" id="product-name" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="product-price">Giá tiền (chỉ nhập số)</label>
-                            <input type="number" id="product-price" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="product-image">Hình ảnh</label>
-                            <input type="file" id="product-image" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="product-category">Danh mục</label>
+                            <label>Danh mục</label>
                             <div class="custom-select-container" id="category-select-container">
-                                <div class="select-button">
-                                    <span class="select-value">Chọn danh mục...</span>
-                                    <span class="arrow"></span>
-                                </div>
+                                <div class="select-button"><span class="select-value">Chọn danh mục...</span><span class="arrow"></span></div>
                                 <div class="select-dropdown"></div>
                             </div>
                         </div>
@@ -46,23 +31,15 @@
                     <button type="submit" class="btn btn-add">Thêm sản phẩm</button>
                 </form>
             </div>
-            
             <div class="card table-container">
                 <h2>Danh sách sản phẩm hiện tại</h2>
                 <table class="product-table">
-                    <thead>
-                        <tr>
-                            <th>Tên sản phẩm</th>
-                            <th>Giá</th>
-                            <th>Hành động</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>Tên sản phẩm</th><th>Giá</th><th>Hành động</th></tr></thead>
                     <tbody id="product-list-body"></tbody>
                 </table>
             </div>
         </main>
     </div>
-
     <div id="confirm-overlay" class="modal-overlay"></div>
     <div id="confirm-modal" class="modal">
         <h2 class="modal-title">Xác nhận hành động</h2>
@@ -72,7 +49,6 @@
             <button id="confirm-btn" class="btn btn-delete">Xác nhận Xóa</button>
         </div>
     </div>
-
     <script src="js/utils.js"></script>
     <script src="js/admin.js"></script>
 </body>

@@ -6,24 +6,34 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectButton = categorySelectContainer.querySelector('.select-button');
     const selectValue = categorySelectContainer.querySelector('.select-value');
     const selectDropdown = categorySelectContainer.querySelector('.select-dropdown');
-    const API_BASE_URL = 'https://flower-shop-back-end.onrender.com';
+    const API_BASE_URL = 'http://localhost:3000';
 
     const confirmOverlay = document.getElementById('confirm-overlay');
     const confirmModal = document.getElementById('confirm-modal');
     const modalMessage = document.getElementById('modal-message');
     const confirmBtn = document.getElementById('confirm-btn');
     const cancelBtn = document.getElementById('cancel-btn');
-
+    
     let productIdToDelete = null; 
 
     // === CÁC HÀM XỬ LÝ ===
 
     // Hàm tải và hiển thị tất cả sản phẩm
     function loadProducts() {
+        // TỐI ƯU: Hiển thị trạng thái đang tải
+        productListBody.innerHTML = '<tr><td colspan="3">Đang tải danh sách sản phẩm...</td></tr>';
+
         fetch(`${API_BASE_URL}/api/products`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
             .then(products => {
-                productListBody.innerHTML = ''; 
+                productListBody.innerHTML = ''; // Xóa dòng "Đang tải..."
+                if (products.length === 0) {
+                    productListBody.innerHTML = '<tr><td colspan="3">Chưa có sản phẩm nào.</td></tr>';
+                    return;
+                }
                 products.forEach(product => {
                     const row = document.createElement('tr');
                     row.dataset.productId = product.id;
@@ -45,10 +55,13 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    // Hàm tải danh mục và tạo các checkbox
+    // Hàm tải danh mục
     function loadCategories() {
         fetch(`${API_BASE_URL}/api/categories`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
             .then(categories => {
                 selectDropdown.innerHTML = '';
                 categories.forEach(category => {
@@ -56,77 +69,64 @@ document.addEventListener('DOMContentLoaded', function() {
                     option.innerHTML = `<input type="checkbox" value="${category.id}"> ${category.name}`;
                     selectDropdown.appendChild(option);
                 });
+            })
+            .catch(error => {
+                console.error('Lỗi khi tải danh mục:', error);
+                selectValue.textContent = 'Lỗi tải danh mục';
             });
     }
 
     // === GẮN CÁC SỰ KIỆN ===
     
     // Sự kiện cho Custom Select Dropdown
-    selectButton.addEventListener('click', () => {
-        categorySelectContainer.classList.toggle('open');
-    });
-
-    window.addEventListener('click', function(e) {
-        if (!categorySelectContainer.contains(e.target)) {
-            categorySelectContainer.classList.remove('open');
-        }
-    });
-
-    selectDropdown.addEventListener('change', function() {
-        const selectedCheckboxes = selectDropdown.querySelectorAll('input[type="checkbox"]:checked');
-        if (selectedCheckboxes.length === 0) {
-            selectValue.textContent = 'Chọn danh mục...';
-        } else if (selectedCheckboxes.length === 1) {
-            selectValue.textContent = selectedCheckboxes[0].parentElement.textContent.trim();
-        } else {
-            selectValue.textContent = `${selectedCheckboxes.length} danh mục đã chọn`;
-        }
+    selectButton.addEventListener('click', () => categorySelectContainer.classList.toggle('open'));
+    window.addEventListener('click', e => !categorySelectContainer.contains(e.target) && categorySelectContainer.classList.remove('open'));
+    selectDropdown.addEventListener('change', () => {
+        const selected = selectDropdown.querySelectorAll('input:checked');
+        if (selected.length === 0) selectValue.textContent = 'Chọn danh mục...';
+        else if (selected.length === 1) selectValue.textContent = selected[0].parentElement.textContent.trim();
+        else selectValue.textContent = `${selected.length} danh mục đã chọn`;
     });
 
     // Sự kiện click trên bảng sản phẩm để Xóa/Sửa
-    productListBody.addEventListener('click', function(event) {
-        const target = event.target;
-        const row = target.closest('tr');
-        if (!row) return;
-
-        const productId = row.dataset.productId;
-        const productName = row.dataset.productName;
+    productListBody.addEventListener('click', event => {
+        const target = event.target, row = target.closest('tr');
+        if (!row || !row.dataset.productId) return; // Bỏ qua nếu click vào dòng "Đang tải..."
+        const productId = row.dataset.productId, productName = row.dataset.productName;
 
         if (target.classList.contains('btn-delete')) {
             productIdToDelete = productId;
-            modalMessage.innerHTML = `Bạn có chắc chắn muốn xóa sản phẩm <strong>"${productName}"</strong> không? Hành động này không thể hoàn tác.`;
+            modalMessage.innerHTML = `Bạn có chắc chắn muốn xóa sản phẩm <strong>"${productName}"</strong> không?`;
             confirmOverlay.classList.add('active');
             confirmModal.classList.add('active');
         }
-
-        if (target.classList.contains('btn-edit')) {
-            alert(`Chức năng Sửa cho sản phẩm "${productName}" sẽ được phát triển ở bước tiếp theo!`);
-        }
+        if (target.classList.contains('btn-edit')) alert(`Chức năng Sửa cho "${productName}" sẽ được làm sau!`);
     });
 
-    // Hàm ẩn modal
+    // Các hàm và sự kiện cho Modal
     function hideModal() {
         confirmOverlay.classList.remove('active');
         confirmModal.classList.remove('active');
         productIdToDelete = null;
     }
 
-    // Gắn sự kiện cho các nút trong modal
-    confirmBtn.addEventListener('click', function() {
+    confirmBtn.addEventListener('click', () => {
         if (productIdToDelete) {
-            fetch(`${API_BASE_URL}/api/products/${productIdToDelete}`, {
-                method: 'DELETE',
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log(data.message);
-                hideModal();
-                loadProducts();
-            })
-            .catch(error => {
-                console.error('Lỗi khi xóa sản phẩm:', error);
-                hideModal();
-            });
+            fetch(`${API_BASE_URL}/api/products/${productIdToDelete}`, { method: 'DELETE' })
+                .then(response => {
+                    if (!response.ok) throw new Error('Xóa thất bại');
+                    return response.json();
+                })
+                .then(data => {
+                    alert(data.message || 'Xóa thành công!');
+                    hideModal();
+                    loadProducts();
+                })
+                .catch(error => {
+                    console.error('Lỗi khi xóa sản phẩm:', error);
+                    alert('Đã xảy ra lỗi khi xóa sản phẩm.');
+                    hideModal();
+                });
         }
     });
 
@@ -134,36 +134,46 @@ document.addEventListener('DOMContentLoaded', function() {
     confirmOverlay.addEventListener('click', hideModal);
 
     // Sự kiện submit của form thêm sản phẩm
-    addProductForm.addEventListener('submit', function(event) {
+    addProductForm.addEventListener('submit', event => {
         event.preventDefault();
+        const submitButton = addProductForm.querySelector('button[type="submit"]');
+
         const formData = new FormData();
-        
         formData.append('name', document.getElementById('product-name').value);
         formData.append('price', document.getElementById('product-price').value);
         formData.append('image', document.getElementById('product-image').files[0]);
         
-        const selectedCheckboxes = selectDropdown.querySelectorAll('input[type="checkbox"]:checked');
-        if (selectedCheckboxes.length === 0) {
+        const selectedCategories = Array.from(selectDropdown.querySelectorAll('input:checked')).map(cb => cb.value);
+        if (selectedCategories.length === 0) {
             alert('Vui lòng chọn ít nhất một danh mục.');
             return;
         }
-        selectedCheckboxes.forEach(checkbox => {
-            formData.append('category', checkbox.value);
-        });
+        selectedCategories.forEach(cat => formData.append('category', cat));
+        
+        // TỐI ƯU: Vô hiệu hóa nút bấm để tránh click nhiều lần
+        submitButton.disabled = true;
+        submitButton.textContent = 'Đang thêm...';
 
-        fetch(`${API_BASE_URL}/api/products`, {
-            method: 'POST',
-            body: formData, 
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Thêm thành công:', data);
-            addProductForm.reset();
-            selectValue.textContent = 'Chọn danh mục...';
-            selectDropdown.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => cb.checked = false);
-            loadProducts();
-        })
-        .catch(error => console.error('Lỗi khi thêm sản phẩm:', error));
+        fetch(`${API_BASE_URL}/api/products`, { method: 'POST', body: formData })
+            .then(response => {
+                if (!response.ok) throw new Error('Thêm sản phẩm thất bại');
+                return response.json();
+            })
+            .then(data => {
+                alert(`Thêm thành công sản phẩm: ${data.name}`);
+                addProductForm.reset();
+                selectValue.textContent = 'Chọn danh mục...';
+                loadProducts();
+            })
+            .catch(error => {
+                console.error('Lỗi khi thêm sản phẩm:', error);
+                alert('Đã xảy ra lỗi khi thêm sản phẩm.');
+            })
+            .finally(() => {
+                // TỐI ƯU: Bật lại nút bấm sau khi hoàn tất
+                submitButton.disabled = false;
+                submitButton.textContent = 'Thêm sản phẩm';
+            });
     });
 
     // === CHẠY CÁC HÀM KHỞI TẠO ===
